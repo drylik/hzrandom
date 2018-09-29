@@ -14,9 +14,13 @@ import ru.novikov.random.generator.models.model.DistribObject;
 import ru.novikov.random.generator.service.GenerationService;
 import ru.novikov.random.server.service.RestService;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -32,9 +36,13 @@ public class RestServiceImpl implements RestService {
         topic = hazelcastInstance.getTopic("generate");
         resultMap = ExpiringMap.builder()
                 .asyncExpirationListener((key, value) -> {
-                    String seed = (String) generated.remove(key);
-
-                    ((DeferredResult)value).setResult(seed + "gen");
+                    var seed = (String) generated.remove(key);
+                    var seedLng = bytesToLong(seed.getBytes());
+                    var rnd = new Random(seedLng);
+                    var generatedBytes = new byte[8];
+                    rnd.nextBytes(generatedBytes);
+                    var generated = new String(generatedBytes, Charset.forName("UTF-8"));
+                    ((DeferredResult)value).setResult(generated);
                 })
                 .expiration(4, TimeUnit.SECONDS)
                 .build();
@@ -51,5 +59,12 @@ public class RestServiceImpl implements RestService {
         } else {
             result.setErrorResult("not implemented yet");
         }
+    }
+
+    private long bytesToLong(byte[] bytes) {
+        var buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.put(bytes);
+        buffer.flip();
+        return buffer.getLong();
     }
 }
