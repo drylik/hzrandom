@@ -6,4 +6,6 @@ package ru.novikov.random.server.service;
  */
 public interface QueueListener {
     void startListening();
+
+    void stopListening();
 }
