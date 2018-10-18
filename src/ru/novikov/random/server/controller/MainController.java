@@ -31,7 +31,6 @@ public class MainController {
     }
 
     private <T> DeferredResult<T> createResult() {
-        DeferredResult result = new DeferredResult<>(30000L, "TIMEOUT");
-        return result;
+        return new DeferredResult<>(30000L, "TIMEOUT");
     }
 }

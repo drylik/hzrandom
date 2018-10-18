@@ -3,15 +3,16 @@ package ru.novikov.random.server.service.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import ru.novikov.random.generator.models.model.DistribObject;
 import ru.novikov.random.server.service.QueueListener;
+import ru.novikov.random.server.service.RestService;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -20,20 +21,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author anovikov
  * @date 17.07.18
  */
-@Lazy
 @Slf4j
 @Service
-@Scope("prototype")
 public class QueueListenerImpl implements QueueListener {
 
+    @Getter
     private final IQueue<DistribObject> queue;
     private final AtomicBoolean listening = new AtomicBoolean(false);
     private final AtomicInteger listeningCount = new AtomicInteger(0);
     private volatile ThreadPoolTaskExecutor executor;
+    private final RestService restService;
 
     @Autowired
-    public QueueListenerImpl(HazelcastInstance hzInstance) {
-        queue = hzInstance.getQueue("mainQueue");
+    public QueueListenerImpl(HazelcastInstance hzInstance, RestService restService) {
+        queue = hzInstance.getQueue("mainQueue" + UUID.randomUUID().toString());
+        this.restService = restService;
     }
 
     /**
@@ -58,13 +60,13 @@ public class QueueListenerImpl implements QueueListener {
         while (listening.get()) {
             try {
                 listeningCount.incrementAndGet();
-                Object object = queue.poll(5L, TimeUnit.SECONDS);
+                var distribObject = queue.poll(5L, TimeUnit.SECONDS);
                 listeningCount.decrementAndGet();
-                if (object != null) {
+                if (distribObject != null) {
                     if (executor.getActiveCount() < executor.getMaxPoolSize()) {
                         executor.execute(this::listen);
                     }
-                    //todo: do some stuff
+                    restService.addToGenerated(distribObject.getTimestamp(), distribObject.getMySeed());
                 }
                 if (listeningCount.get() > 0) {
                     break;
@@ -80,7 +82,7 @@ public class QueueListenerImpl implements QueueListener {
 
     @Override
     public void stopListening() {
-        boolean needToShutdown = listening.getAndSet(false);
+        var needToShutdown = listening.getAndSet(false);
         while (executor.getActiveCount() > 0) ;
         if (needToShutdown) executor.shutdown();
     }

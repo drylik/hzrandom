@@ -3,6 +3,7 @@ package ru.novikov.random;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.TcpIpConfig;
@@ -39,6 +40,8 @@ public class Main {
                 .setNetworkConfig(new NetworkConfig()
                         .setPort(5701)
                         .setJoin(new JoinConfig()
+                                .setMulticastConfig(new MulticastConfig()
+                                        .setEnabled(false))
                                 .setTcpIpConfig(new TcpIpConfig()
                                         .setEnabled(true)
                                         .setMembers(List.of("192.168.1.1"))))));

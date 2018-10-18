@@ -25,10 +25,12 @@ public class DistribObject implements IdentifiedDataSerializable {
     private Long timestamp;
     private String clientSeed;
     private String mySeed;
+    private String queueName;
 
-    public DistribObject(Long timestamp, String clientSeed) {
+    public DistribObject(Long timestamp, String clientSeed, String queueName) {
         this.timestamp = timestamp;
         this.clientSeed = clientSeed;
+        this.queueName = queueName;
     }
 
     @Override
@@ -46,6 +48,7 @@ public class DistribObject implements IdentifiedDataSerializable {
         objectDataOutput.writeLong(timestamp);
         objectDataOutput.writeUTF(clientSeed);
         objectDataOutput.writeUTF(mySeed);
+        objectDataOutput.writeUTF(queueName);
     }
 
     @Override
@@ -53,5 +56,6 @@ public class DistribObject implements IdentifiedDataSerializable {
         timestamp = objectDataInput.readLong();
         clientSeed = objectDataInput.readUTF();
         mySeed = objectDataInput.readUTF();
+        queueName = objectDataInput.readUTF();
     }
 }

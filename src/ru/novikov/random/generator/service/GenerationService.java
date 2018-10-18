@@ -1,5 +1,5 @@
 package ru.novikov.random.generator.service;
 
 public interface GenerationService {
-    String generateString();
+    String generateString(long seedLng);
 }
